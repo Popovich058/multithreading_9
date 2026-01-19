@@ -3,35 +3,30 @@ package main
 import (
 	"testing"
 
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// TestGenerateRandomElements проверяет корректность работы функции generateRandomElements.
 func TestGenerateRandomElements(t *testing.T) {
-	t.Run("positive_size_returns_correct_length", func(t *testing.T) {
-		size := 5
-		result := generateRandomElements(size)
-		require.Len(t, result, size, "expected length %d, got %d", size, len(result))
-	})
+	testCases := []struct {
+		name      string
+		size      int
+		expectedLen int
+	}{
+		{"positive_size", 5, 5},
+		{"zero_size", 0, 0},
+		{"negative_size", -10, 0},
+		{"large_size", 10000, 10000},
+	}
 
-	t.Run("zero_size_returns_empty_slice", func(t *testing.T) {
-		result := generateRandomElements(0)
-		require.Empty(t, result, "expected empty slice when size=0, got length %d", len(result))
-	})
-
-	t.Run("negative_size_returns_empty_slice", func(t *testing.T) {
-		result := generateRandomElements(-10)
-		require.Empty(t, result, "expected empty slice for negative size, got length %d", len(result))
-	})
-
-	t.Run("large_size_does_not_panic", func(t *testing.T) {
-		size := 10000
-		result := generateRandomElements(size)
-		require.Len(t, result, size, 
-			"for large size %d, expected length %d, got %d",
-			size, size, len(result))
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := generateRandomElements(tc.size)
+			require.Len(t, result, tc.expectedLen,
+				"expected length %d, got %d", tc.expectedLen, len(result))
+		})
+	}
 
 	t.Run("repeated_calls_likely_produce_different_results", func(t *testing.T) {
 		size := 10
@@ -53,117 +48,71 @@ func TestGenerateRandomElements(t *testing.T) {
 }
 
 func TestMaximum(t *testing.T) {
-	t.Run("multiple_positive_numbers", func(t *testing.T) {
-		data := []int{1, 5, 3, 9, 2}
-		max, err := maximum(data)
-		require.NoError(t, err, "unexpected error: %v", err)
-		assert.Equal(t, 9, max, "expected maximum value 9, got %d", max)
-	})
+	testCases := []struct {
+		name     string
+		data     []int
+		expected int
+	}{
+		{"multiple_positive", []int{1, 5, 3, 9, 2}, 9},
+		{"negative_numbers", []int{-10, -5, -20, -1}, -1},
+		{"mixed_numbers", []int{-5, 0, 5, -10, 3}, 5},
+		{"single_element", []int{42}, 42},
+		{"empty_slice", []int{}, 0},
+		{"nil_slice", nil, 0},
+		{"max_at_beginning", []int{100, 1, 2, 3}, 100},
+		{"max_at_end", []int{1, 2, 3, 100}, 100},
+		{"all_same", []int{5, 5, 5, 5}, 5},
+	}
 
-	t.Run("negative_numbers", func(t *testing.T) {
-		data := []int{-10, -5, -20, -1}
-		max, err := maximum(data)
-		require.NoError(t, err, "unexpected error: %v", err)
-		assert.Equal(t, -1, max, "expected maximum value -1, got %d", max)
-	})
-
-	t.Run("mixed_numbers", func(t *testing.T) {
-		data := []int{-5, 0, 5, -10, 3}
-		max, err := maximum(data)
-		require.NoError(t, err, "unexpected error: %v", err)
-		assert.Equal(t, 5, max, "expected maximum value 5, got %d", max)
-	})
-
-	t.Run("single_element", func(t *testing.T) {
-		data := []int{42}
-		max, err := maximum(data)
-		require.NoError(t, err, "unexpected error: %v", err)
-		assert.Equal(t, 42, max, "expected single element 42, got %d", max)
-	})
-
-	t.Run("empty_slice_returns_error", func(t *testing.T) {
-		data := []int{}
-		max, err := maximum(data)
-		require.Error(t, err, "expected error for empty slice, but no error returned")
-		assert.Zero(t, max, "expected zero value for max on empty slice, got %d", max)
-	})
-
-	t.Run("nil_slice_returns_error", func(t *testing.T) {
-		var data []int = nil
-		max, err := maximum(data)
-		require.Error(t, err, "expected error for nil slice, but no error returned")
-		assert.Zero(t, max, "expected zero value for max on nil slice, got %d", max)
-	})
-
-	t.Run("max_at_beginning", func(t *testing.T) {
-		data := []int{100, 1, 2, 3}
-		max, err := maximum(data)
-		require.NoError(t, err, "unexpected error: %v", err)
-		assert.Equal(t, 100, max, "expected max 100 at beginning, got %d", max)
-	})
-
-	t.Run("max_at_end", func(t *testing.T) {
-		data := []int{1, 2, 3, 100}
-		max, err := maximum(data)
-		require.NoError(t, err, "unexpected error: %v", err)
-		assert.Equal(t, 100, max, "expected max 100 at end, got %d", max)
-	})
-
-	t.Run("all_elements_same", func(t *testing.T) {
-		data := []int{5, 5, 5, 5}
-		max, err := maximum(data)
-		require.NoError(t, err, "unexpected error: %v", err)
-		assert.Equal(t, 5, max, "expected max 5 for identical elements, got %d", max)
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			max := maximum(tc.data)
+			assert.Equal(t, tc.expected, max,
+				"expected maximum %d, got %d for case %s", tc.expected, max, tc.name)
+		})
+	}
 }
 
-
 func TestMaxChunks(t *testing.T) {
-	t.Run("large_slice_splits_into_chunks", func(t *testing.T) {
-		data := []int{1, 5, 3, 9, 2, 8, 4, 7, 6} // len=9 > CHUNKS=8
-		max, err := maxChunks(data)
-		require.NoError(t, err, "unexpected error: %v", err)
-		assert.Equal(t, 9, max, "expected maximum value 9, got %d", max)
-	})
+	testCases := []struct {
+		name       string
+		data       []int
+		expected   int
+		expectErr  bool
+	}{
+		{"large_slice", []int{1, 5, 3, 9, 2, 8, 4, 7, 6}, 9, false},
+		{"small_slice", []int{1, 3, 2}, 3, false},
+		{"empty_slice", []int{}, 0, true},
+		{"nil_slice", nil, 0, true},
+		{"all_same_values", nil, 5, false}, 
+		{"slice_equals_chunks", nil, 14, false}, 
+	}
 
-	t.Run("small_slice_uses_single_chunk", func(t *testing.T) {
-		data := []int{1, 3, 2} // len=3 < CHUNKS=8
-		max, err := maxChunks(data)
-		require.NoError(t, err, "unexpected error: %v", err)
-		assert.Equal(t, 3, max, "expected maximum value 3, got %d", max)
-	})
-
-	t.Run("empty_slice_returns_error", func(t *testing.T) {
-		data := []int{}
-		max, err := maxChunks(data)
-		require.Error(t, err, "expected error for empty slice, but no error returned")
-		assert.Zero(t, max, "expected zero value for max on empty slice, got %d", max)
-	})
-
-	t.Run("nil_slice_returns_error", func(t *testing.T) {
-		var data []int = nil
-		max, err := maxChunks(data)
-		require.Error(t, err, "expected error for nil slice, but no error returned")
-		assert.Zero(t, max, "expected zero value for max on nil slice, got %d", max)
-	})
-
-	t.Run("all_elements_same_value", func(t *testing.T) {
-		data := make([]int, 10)
-		for i := range data {
-			data[i] = 5
+	for i, tc := range testCases {
+		switch tc.name {
+		case "all_same_values":
+			testCases[i].data = make([]int, 10)
+			for j := range testCases[i].data {
+				testCases[i].data[j] = 5
+			}
+		case "slice_equals_chunks":
+			testCases[i].data = make([]int, CHUNKS)
+			for j := 0; j < CHUNKS; j++ {
+				testCases[i].data[j] = j * 2
+			}
 		}
-		max, err := maxChunks(data)
-		require.NoError(t, err, "unexpected error: %v", err)
-		assert.Equal(t, 5, max, "expected max 5 for identical elements, got %d", max)
-	})
+	}
 
-	t.Run("slice_length_equals_chunks", func(t *testing.T) {
-		data := make([]int, CHUNKS)
-		for i := 0; i < CHUNKS; i++ {
-			data[i] = i * 2 // 0, 2, 4, ..., 14 (при CHUNKS=8)
-		}
-		max, err := maxChunks(data)
-		require.NoError(t, err, "unexpected error: %v", err)
-		assert.Equal(t, 14, max, "expected maximum value 14, got %d", max)
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			max, err := maxChunks(tc.data)
+			if tc.expectErr {
+				require.Error(t, err, "expected error for case %s", tc.name)
+			} else {
+				require.NoError(t, err, "unexpected error for case %s: %v", tc.name, err)
+			}
+			assert.Equal(t, tc.expected, max,
+				"expected maximum %d, got %d for case %s", tc.expected, max, tc.name)
+		})
+	}
 }
